@@ -1,8 +1,28 @@
 from django.shortcuts import render, redirect
 from .models import Project, Task
 from .forms import ProjectForm, TaskForm, RegistrationForm, LoginForm
-from django.contrib.auhth.models import User
+from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login
+from django.views.generic.list import ListView
+from django.views.generic.edit import CreateView
+from django.urls import reverse_lazy
+from django.contrib.auth.views import LoginView
+from django.http import HttpResponse
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+
+
+class RegistrationView(CreateView):
+    template_name = 'registration.html'
+    # model = User
+    # fields = ['username']
+    form_class = RegistrationForm
+    success_url = reverse_lazy('/')
+
+
+    def get_success_url(self):
+        responce = HttpResponse()
+        responce.set_cookie('name', self.object.username)
+        return '/'
 
 
 def registration(request):
@@ -19,6 +39,12 @@ def registration(request):
     else:
         form = RegistrationForm()
         return render(request, 'registration.html', {'form': form})
+
+
+class LoginPage(LoginView):
+    template_name = 'login.html'
+    form_class = LoginForm
+    redirect_authenticated_user = True
 
 
 def login_page(request):
@@ -38,11 +64,51 @@ def login_page(request):
         return render(request, 'login.html', {'form': form})
 
 
+class HomeView(ListView):
+    model = Project
+    template_name = 'Home.html'
+    context_object_name = 'projects'
+
+
 def home(request):
     projects = Project.objects.all()
     user = request.user
-    context = {'user': user, 'projeccts': projects}
+    context = {'user': user, 'projects': projects}
     return render(request, 'home.html', context)
+
+    def get_context_data(self, **kwargs):
+        context = super()
+
+
+def project_edit(request, **kwargs):
+    p = Project.objects.get(id=kwargs['id'])
+    if request.method == 'POST':
+        form = ProjectForm(request.POST)
+        if form.is_valid():
+            name = form.cleaned_data['name']
+            p.name = name
+            p.save()
+            return redirect('/')
+    else:
+        form = ProjectForm(initial={'name': p.name})
+        context = {'form': form}
+        return render(request, 'project_create.html', context)
+
+
+class ProjectView(CreateView):
+    form_class = TaskForm
+    template_name = 'project.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        project = Project.objects.get(id=self.kwargs['id'])
+        tasks = Task.objects.filter(project=project)
+        context['project'] = project
+        context['tasks'] = tasks
+        return context
+
+    def get_success_url(self, **kwargs):
+        return f'project/{self.kwargs["id"]}'
 
 
 def project(request, **kwargs):
