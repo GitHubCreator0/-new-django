@@ -8,6 +8,7 @@ from django.views.generic.edit import CreateView
 from django.urls import reverse_lazy
 from django.contrib.auth.views import LoginView
 from django.http import HttpResponse
+from django.views.generic import TemplateView
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 
 
@@ -17,7 +18,6 @@ class RegistrationView(CreateView):
     # fields = ['username']
     form_class = RegistrationForm
     success_url = reverse_lazy('/')
-
 
     def get_success_url(self):
         responce = HttpResponse()
@@ -64,10 +64,24 @@ def login_page(request):
         return render(request, 'login.html', {'form': form})
 
 
+class ProfileView(TemplateView):
+    template_name = 'profile.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        context['user'] = user
+        return context
+
+
+class TestView(TemplateView):
+    template_name = 'test.html'
+
+
 class HomeView(ListView):
     model = Project
+    paginate_by = 2
     template_name = 'Home.html'
-    context_object_name = 'projects'
 
 
 def home(request):
