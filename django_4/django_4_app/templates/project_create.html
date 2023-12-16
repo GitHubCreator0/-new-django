@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="/static/js/test.js"></script>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Post Create</title>
 </head>
 <body>
-    <form method="post">
-        {% csrf_token %}
-        {{ form }}
-        <input type="submit">
-    </form>
+    {% csrf_token %}
+    <input type="text" id="text">
+    <input type="submit" value="Create" id="btn">
+    <h1 id="resp"></h1>
 </body>
 </html>

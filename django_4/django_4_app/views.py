@@ -6,8 +6,9 @@ from django.contrib.auth import authenticate, login
 from django.views.generic.list import ListView
 from django.views.generic.edit import CreateView
 from django.urls import reverse_lazy
+from django.template.loader import render_to_string
 from django.contrib.auth.views import LoginView
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.views.generic import TemplateView
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 
@@ -77,6 +78,11 @@ class ProfileView(TemplateView):
 class TestView(TemplateView):
     template_name = 'test.html'
 
+    def post(self, request):
+        data = request.POST
+        print(data['text'])
+        return JsonResponse({'resp': data['text']}, safe=False)
+
 
 class HomeView(ListView):
     model = Project
@@ -143,18 +149,19 @@ def project(request, **kwargs):
         return render(request, 'project.html', {'project': p, 'tasks': tasks, 'form': form})
 
 
-def project_create(request):
-    if request.method == 'POST':
-        form = ProjectForm(request.POST)
-        if form.is_valid():
-            name = form.cleaned_data['name']
-            project = Project(name=name)
-            project.save()
-            return redirect('/')
-    else:
-        form = ProjectForm()
-        context = {'form': form}
-        return render(request, 'project_create.html', context)
+class ProjectCreate(TemplateView):
+    template_name = 'project_create.html'
+
+    def get_contex_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['form'] = ProjectForm()
+        return context
+
+    def post(self, request):
+        data = request.POST
+        project = Project(name=data['text'])
+        project.save()
+        return JsonResponse({'resp': data['text']}, safe=False)
 
 
 # def page1(request):

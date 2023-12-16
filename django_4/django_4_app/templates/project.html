@@ -12,7 +12,7 @@
     <form method="post">
         {% csrf_token %}
         {{ form }}
-        <input type="submit">
+        <input type="submit" id="tasks">
     </form>
     <a href="/project/edit/{{ project.id }}">edit</a>
 </body>
