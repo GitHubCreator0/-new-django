@@ -60,7 +60,7 @@ class Project(Abstract):
 
 class Task(Abstract):
     status = models.BooleanField()
-    deadline = models.DateTimeField()
+    deadline = models.DateField()
     priority = models.IntegerField()
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
 

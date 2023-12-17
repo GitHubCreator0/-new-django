@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from .models import Project, Task
-from .forms import ProjectForm, TaskForm, RegistrationForm, LoginForm
+from .forms import ProjectForm, TaskForm, RegistrationForm, LoginForm, TaskEditForm
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login
 from django.views.generic.list import ListView
@@ -115,8 +115,7 @@ def project_edit(request, **kwargs):
         return render(request, 'project_create.html', context)
 
 
-class ProjectView(CreateView):
-    form_class = TaskForm
+class ProjectView(TemplateView):
     template_name = 'project.html'
 
     def get_context_data(self, **kwargs):
@@ -125,10 +124,28 @@ class ProjectView(CreateView):
         tasks = Task.objects.filter(project=project)
         context['project'] = project
         context['tasks'] = tasks
+        context['form'] = TaskForm()
         return context
 
     def get_success_url(self, **kwargs):
         return f'project/{self.kwargs["id"]}'
+
+    def post(self, request, **kwargs):
+        data = request.POST
+        if len(data.keys()) == 5:
+            project = Project.objects.get(id=self.kwargs['id'])
+            task = Task(name=data['name'], status=True if data['status'] == 'on' else False, deadline=data['deadline'],
+                        priority=data['priority'], project=project)
+            task.save()
+            resp = render_to_string('task.html', {'i': task})
+            return JsonResponse(resp, safe=False)
+        elif 'id' in data.keys():
+            task = Task.objects.get(id=int(data['id']))
+            resp = render_to_string('edit_form.html', {'form' : TaskForm(initial={'name': task.name,
+                                                       'status': task.status, 'deadline': task.deadline,
+                                                                                  'priority': task.priority}),
+                                                       'id': task.id})
+            return JsonResponse(resp, safe=False)
 
 
 def project(request, **kwargs):
@@ -147,6 +164,27 @@ def project(request, **kwargs):
         form = TaskForm()
         tasks = Task.objects.filter(project=p)
         return render(request, 'project.html', {'project': p, 'tasks': tasks, 'form': form})
+
+
+#class TaskEditView(TemplateView):
+    template_name = 'task_edit.html'
+
+#    def get_context_data(self, **kwargs):
+#        context = super().get_context_data(**kwargs)
+#        task = Task.objects.get(id=self.kwargs['id'])
+#        context['task'] = task
+#        context['form'] = TaskEditForm()
+#        return context
+
+#    def post(self, request, **kwargs):
+#        data = request.POST
+#        task_id = Task.objects.get(id=self.kwargs['id'])
+#        task_id.name = data['name']
+#        task_id.deadline = data['deadline']
+#        task_id.status = data['status']
+#        task_id.priority = data['priority']
+#        resp = render_to_string('task.html', {'i': task_id})
+#        return JsonResponse(resp, safe=False)
 
 
 class ProjectCreate(TemplateView):
